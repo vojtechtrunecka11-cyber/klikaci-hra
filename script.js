@@ -1,20 +1,37 @@
-const defaultState = { coins: 0, perClick: 1, perSecond: 0, totalClicks: 0, level: 1, upgrades: { click: 0, worker: 0, multiplier: 0 } };
-const upgrades = [
-  { id: 'click', icon: '⚡', name: 'Silnější kliknutí', description: '+1 mince za kliknutí', baseCost: 25, effect: state => state.perClick += 1 },
-  { id: 'worker', icon: '⛏️', name: 'Královský horník', description: '+1 mince každou sekundu', baseCost: 80, effect: state => state.perSecond += 1 },
-  { id: 'multiplier', icon: '💎', name: 'Diamantový bonus', description: '+5 mincí za kliknutí', baseCost: 350, effect: state => state.perClick += 5 }
+const STORAGE_KEY = "pixel-miner-save";
+const upgradeDefinitions = [
+  { id: "pickaxe", icon: "⛏️", name: "Ostrý krumpáč", description: "+1 mince za každý klik", baseCost: 25, effect: "click", amount: 1 },
+  { id: "drill", icon: "🔩", name: "Automatický vrták", description: "+1 mince každou sekundu", baseCost: 100, effect: "passive", amount: 1 },
+  { id: "crystal", icon: "💎", name: "Krystalový hrot", description: "+5 mincí za každý klik", baseCost: 300, effect: "click", amount: 5 },
+  { id: "robot", icon: "🤖", name: "Těžební robot", description: "+10 mincí každou sekundu", baseCost: 900, effect: "passive", amount: 10 }
 ];
-let state = JSON.parse(localStorage.getItem('clickerKingdom')) || structuredClone(defaultState);
-const $ = id => document.getElementById(id);
-const format = n => Math.floor(n).toLocaleString('cs-CZ');
-function cost(upgrade) { return Math.floor(upgrade.baseCost * Math.pow(1.55, state.upgrades[upgrade.id])); }
-function render() {
-  $('coins').textContent = format(state.coins); $('perClick').textContent = format(state.perClick); $('perSecond').textContent = format(state.perSecond); $('totalClicks').textContent = format(state.totalClicks); $('levelLabel').textContent = `Úroveň ${state.level}`;
-  const needed = state.level * 100, progress = state.totalClicks % needed; $('progressText').textContent = `${format(progress)} / ${format(needed)}`; $('progressBar').style.width = `${Math.min(100, progress / needed * 100)}%`;
-  $('upgrades').innerHTML = upgrades.map(u => { const price = cost(u), owned = state.upgrades[u.id]; return `<article class="upgrade"><div class="upgrade-top"><span class="upgrade-icon">${u.icon}</span><div><h3>${u.name} <small>×${owned}</small></h3><p>${u.description}</p></div></div><div class="buy-row"><span class="cost">🪙 ${format(price)}</span><button class="buy-button" data-id="${u.id}" ${state.coins < price ? 'disabled' : ''}>Koupit</button></div></article>`; }).join('');
-  localStorage.setItem('clickerKingdom', JSON.stringify(state));
+
+let state = { coins: 0, totalCoins: 0, clicks: 0, upgrades: {} };
+try { state = { ...state, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; } catch (_) {}
+const $ = (id) => document.getElementById(id);
+const format = (number) => Math.floor(number).toLocaleString("cs-CZ");
+const level = () => Math.floor(state.clicks / 100) + 1;
+const cost = (upgrade, owned) => Math.floor(upgrade.baseCost * Math.pow(1.55, owned));
+
+function totals() {
+  return upgradeDefinitions.reduce((result, upgrade) => {
+    const owned = state.upgrades[upgrade.id] || 0;
+    if (upgrade.effect === "click") result.click += owned * upgrade.amount;
+    if (upgrade.effect === "passive") result.passive += owned * upgrade.amount;
+    return result;
+  }, { click: 1, passive: 0 });
 }
-$('coinButton').addEventListener('click', () => { state.coins += state.perClick; state.totalClicks++; if (state.totalClicks % (state.level * 100) === 0) state.level++; $('clickMessage').textContent = `+${format(state.perClick)} mincí!`; render(); });
-$('upgrades').addEventListener('click', e => { const button = e.target.closest('.buy-button'); if (!button) return; const upgrade = upgrades.find(u => u.id === button.dataset.id), price = cost(upgrade); if (state.coins < price) return; state.coins -= price; state.upgrades[upgrade.id]++; upgrade.effect(state); render(); });
-$('resetButton').addEventListener('click', () => { if (confirm('Opravdu chceš vymazat svůj postup?')) { state = structuredClone(defaultState); render(); } });
-setInterval(() => { if (state.perSecond) { state.coins += state.perSecond; render(); } }, 1000); render();
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); $("save-status").textContent = "Automaticky uloženo"; }
+function render() {
+  const total = totals();
+  $("coins").textContent = format(state.coins); $("per-click").textContent = format(total.click); $("per-second").textContent = format(total.passive); $("total-coins").textContent = format(state.totalCoins);
+  $("mine-level").textContent = level(); const progress = state.clicks % 100; $("level-progress").style.width = `${progress}%`; $("level-progress-text").textContent = `${progress} / 100`;
+  const ownedCount = upgradeDefinitions.filter(u => (state.upgrades[u.id] || 0) > 0).length; $("upgrade-count").textContent = `${ownedCount} / ${upgradeDefinitions.length}`;
+  $("upgrades").innerHTML = upgradeDefinitions.map((upgrade) => { const owned = state.upgrades[upgrade.id] || 0; const price = cost(upgrade, owned); return `<div class="upgrade"><div class="upgrade-top"><span class="upgrade-icon">${upgrade.icon}</span><div><h3>${upgrade.name}</h3><p>${upgrade.description}</p></div></div><div class="upgrade-bottom"><span class="upgrade-level">Úroveň ${owned}</span><button class="buy-button" data-upgrade="${upgrade.id}" ${state.coins < price ? "disabled" : ""}>💰 ${format(price)}</button></div></div>`; }).join("");
+}
+function toast(message) { const element = $("toast"); element.textContent = message; element.classList.add("show"); setTimeout(() => element.classList.remove("show"), 1800); }
+$("mine-button").addEventListener("click", () => { const amount = totals().click; state.coins += amount; state.totalCoins += amount; state.clicks += 1; render(); save(); });
+$("upgrades").addEventListener("click", (event) => { const button = event.target.closest("button[data-upgrade]"); if (!button) return; const upgrade = upgradeDefinitions.find(item => item.id === button.dataset.upgrade); const owned = state.upgrades[upgrade.id] || 0; const price = cost(upgrade, owned); if (state.coins < price) return; state.coins -= price; state.upgrades[upgrade.id] = owned + 1; toast(`Zakoupeno: ${upgrade.name}`); render(); save(); });
+$("reset-button").addEventListener("click", () => { if (!confirm("Opravdu chceš smazat celý postup?")) return; state = { coins: 0, totalCoins: 0, clicks: 0, upgrades: {} }; save(); render(); toast("Postup byl resetován"); });
+setInterval(() => { const amount = totals().passive; if (!amount) return; state.coins += amount; state.totalCoins += amount; render(); save(); }, 1000);
+render();

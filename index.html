@@ -3,48 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clicker Kingdom</title>
+  <meta name="description" content="Klikací hra s obchodem vylepšení">
+  <title>Pixel Miner — Klikací hra</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app-shell">
+  <main class="game-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">CLICKER KINGDOM</p>
-        <h1>Buduj své království</h1>
+        <p class="eyebrow">PIXEL MINER</p>
+        <h1>Vybuduj své těžařské impérium</h1>
       </div>
-      <button id="resetButton" class="ghost-button" type="button">Reset hry</button>
+      <button id="reset-button" class="text-button" type="button">Resetovat hru</button>
     </header>
 
-    <section class="stats-grid" aria-label="Herní statistiky">
-      <div class="stat-card"><span>Mince</span><strong id="coins">0</strong></div>
-      <div class="stat-card"><span>Za kliknutí</span><strong id="perClick">1</strong></div>
-      <div class="stat-card"><span>Za sekundu</span><strong id="perSecond">0</strong></div>
-      <div class="stat-card"><span>Celkem kliknutí</span><strong id="totalClicks">0</strong></div>
+    <section class="stats-grid" aria-label="Statistiky hry">
+      <article class="stat-card"><span>💰 Mince</span><strong id="coins">0</strong></article>
+      <article class="stat-card"><span>⚡ Za kliknutí</span><strong id="per-click">1</strong></article>
+      <article class="stat-card"><span>🤖 Za sekundu</span><strong id="per-second">0</strong></article>
+      <article class="stat-card"><span>🏆 Celkem vytěženo</span><strong id="total-coins">0</strong></article>
     </section>
 
-    <section class="game-layout">
-      <div class="click-panel panel">
+    <section class="content-grid">
+      <article class="mine-panel panel">
         <div class="panel-heading">
-          <span class="badge">TVÉ KRÁLOVSTVÍ</span>
-          <span id="levelLabel">Úroveň 1</span>
+          <div>
+            <p class="eyebrow">HLAVNÍ DŮL</p>
+            <h2>Těž krystaly</h2>
+          </div>
+          <span id="save-status" class="save-status">Automaticky uloženo</span>
         </div>
-        <div class="coin-orb-wrap">
-          <button id="coinButton" class="coin-orb" type="button" aria-label="Klikni na minci">🪙</button>
-          <div id="clickMessage" class="click-message">Klikni a vydělávej!</div>
+        <button id="mine-button" class="mine-button" type="button" aria-label="Vytěžit krystaly">
+          <span class="mine-icon">⛏️</span>
+          <span>KLIKNOUT</span>
+          <small>Každý klik tě odmění mincemi</small>
+        </button>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Úroveň dolu <strong id="mine-level">1</strong></span><span id="level-progress-text">0 / 100</span></div>
+          <div class="progress-bar"><span id="level-progress"></span></div>
         </div>
-        <div class="progress-label"><span>Pokrok k další úrovni</span><span id="progressText">0 / 100</span></div>
-        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
-      </div>
+      </article>
 
-      <aside class="shop panel">
-        <div class="shop-heading"><div><span class="badge">OBCHOD</span><h2>Vylepšení</h2></div><span class="shop-icon">⚒️</span></div>
-        <div id="upgrades" class="upgrade-list"></div>
+      <aside class="shop-panel panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">OBCHOD</p>
+            <h2>Vylepšení</h2>
+          </div>
+          <span class="shop-count" id="upgrade-count">0 / 4</span>
+        </div>
+        <div id="upgrades" class="upgrades"></div>
       </aside>
     </section>
 
-    <footer><span>Postup se ukládá automaticky do tohoto prohlížeče.</span><span>Made with ✨</span></footer>
+    <footer><span>Postup se ukládá přímo v tomto prohlížeči.</span><span>Pixel Miner v1.0</span></footer>
   </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
 </body>
 </html>
